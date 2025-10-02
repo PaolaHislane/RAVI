@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Álbum do Bebê Ravi Lorran</title>
+    <title>Álbum do Ravi Lorran</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -132,6 +132,15 @@
             background-color: #d32f2f;
         }
 
+        .btn-edit {
+            background-color: var(--primary-light);
+            color: var(--white);
+        }
+
+        .btn-edit:hover {
+            background-color: var(--primary-color);
+        }
+
         /* Main content */
         .main {
             padding: 1.5rem 0;
@@ -253,6 +262,7 @@
 
         .photo-details {
             padding: 1rem;
+            position: relative;
         }
 
         .photo-title {
@@ -260,6 +270,7 @@
             margin-bottom: 0.5rem;
             color: var(--primary-dark);
             font-size: clamp(1rem, 2vw, 1.1rem);
+            padding-right: 2rem;
         }
 
         .photo-description {
@@ -290,6 +301,31 @@
             flex: 1;
             justify-content: center;
             min-width: 60px;
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .photo-card:hover .edit-icon {
+            opacity: 1;
+        }
+
+        .edit-icon:hover {
+            background: var(--white);
+            transform: scale(1.1);
         }
 
         /* Modal */
@@ -331,6 +367,10 @@
 
         .view-content {
             max-width: 800px;
+        }
+
+        .edit-content {
+            max-width: 500px;
         }
 
         .close {
@@ -422,10 +462,15 @@
             border-radius: 8px;
         }
 
+        .view-details {
+            position: relative;
+        }
+
         .view-details h3 {
             color: var(--primary-dark);
             margin-bottom: 0.5rem;
             font-size: clamp(1.2rem, 3vw, 1.5rem);
+            padding-right: 3rem;
         }
 
         .view-details p {
@@ -611,6 +656,10 @@
             .photo-actions {
                 flex-direction: column;
             }
+            
+            .edit-icon {
+                opacity: 1;
+            }
         }
 
         @media (max-width: 480px) {
@@ -635,6 +684,10 @@
             
             .btn:hover {
                 transform: none;
+            }
+            
+            .edit-icon {
+                opacity: 1;
             }
         }
     </style>
@@ -667,9 +720,6 @@
                     <i class="fas fa-sign-in-alt"></i> Entrar
                 </button>
                 <div style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 8px; font-size: 0.9rem;">
-                    <strong>Credenciais preenchidas automaticamente</strong><br>
-                    E-mail: ravilorra@gmail.com<br>
-                    Senha: 30092025
                 </div>
             </form>
         </div>
@@ -720,7 +770,7 @@
 
         <footer class="footer">
             <div class="container">
-                <p>&copy; 2023 Álbum do Bebê Ravi Lorran. Todos os direitos reservados.</p>
+                <p>&copy; 2025 Álbum do Ravi Lorran. Todos os direitos reservados.</p>
             </div>
         </footer>
     </div>
@@ -770,11 +820,40 @@
             <div class="view-photo-container">
                 <img id="viewPhoto" src="" alt="">
                 <div class="view-details">
+                    <div class="edit-icon" id="editViewBtn" title="Editar título e descrição">
+                        <i class="fas fa-edit" style="color: var(--primary-color);"></i>
+                    </div>
                     <h3 id="viewTitle"></h3>
                     <p id="viewDescription"></p>
                     <p class="view-date" id="viewDate"></p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar título e descrição -->
+    <div id="editModal" class="modal">
+        <div class="modal-content edit-content">
+            <button class="close">&times;</button>
+            <h2>Editar Foto</h2>
+            <form id="editForm">
+                <div class="form-group">
+                    <label for="editTitle">Título</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">Descrição</label>
+                    <textarea id="editDescription" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editDate">Data</label>
+                    <input type="date" id="editDate" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <button type="button" class="btn btn-outline" id="cancelEditBtn">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -795,9 +874,13 @@
         const addPhotoBtn = document.getElementById('addPhotoBtn');
         const photoModal = document.getElementById('photoModal');
         const viewModal = document.getElementById('viewModal');
+        const editModal = document.getElementById('editModal');
         const photoForm = document.getElementById('photoForm');
+        const editForm = document.getElementById('editForm');
         const searchInput = document.getElementById('searchInput');
         const cancelBtn = document.getElementById('cancelBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const editViewBtn = document.getElementById('editViewBtn');
         const closeButtons = document.querySelectorAll('.close');
         const fileUploadArea = document.getElementById('fileUploadArea');
         const photoFile = document.getElementById('photoFile');
@@ -810,6 +893,7 @@
         let currentPhotoId = null;
         let allPhotos = [];
         let isLoggedIn = false;
+        let currentEditingPhoto = null;
 
         // Credenciais de acesso
         const USER_EMAIL = 'ravilorra@gmail.com';
@@ -837,7 +921,10 @@
             logoutBtn.addEventListener('click', handleLogout);
             addPhotoBtn.addEventListener('click', () => openModal());
             photoForm.addEventListener('submit', handleFormSubmit);
+            editForm.addEventListener('submit', handleEditSubmit);
             cancelBtn.addEventListener('click', () => closeModal());
+            cancelEditBtn.addEventListener('click', () => closeEditModal());
+            editViewBtn.addEventListener('click', openEditModal);
             searchInput.addEventListener('input', handleSearch);
             fileUploadArea.addEventListener('click', () => photoFile.click());
             photoFile.addEventListener('change', handleFileSelect);
@@ -846,6 +933,7 @@
                 button.addEventListener('click', () => {
                     photoModal.style.display = 'none';
                     viewModal.style.display = 'none';
+                    editModal.style.display = 'none';
                 });
             });
             
@@ -856,6 +944,9 @@
                 }
                 if (event.target === viewModal) {
                     viewModal.style.display = 'none';
+                }
+                if (event.target === editModal) {
+                    editModal.style.display = 'none';
                 }
             });
         }
@@ -934,6 +1025,9 @@
                 photoCard.innerHTML = `
                     <img src="${photo.image_url}" alt="${photo.title}" class="photo-img" data-id="${photo.id}">
                     <div class="photo-details">
+                        <div class="edit-icon" data-id="${photo.id}" title="Editar título e descrição">
+                            <i class="fas fa-edit" style="color: var(--primary-color);"></i>
+                        </div>
                         <h3 class="photo-title">${photo.title}</h3>
                         <p class="photo-description">${photo.description}</p>
                         <p class="photo-date">${formatDate(photo.date)}</p>
@@ -941,7 +1035,7 @@
                             <button class="btn btn-primary view-btn" data-id="${photo.id}">
                                 <i class="fas fa-eye"></i> Ver
                             </button>
-                            <button class="btn btn-outline edit-btn" data-id="${photo.id}">
+                            <button class="btn btn-edit edit-btn" data-id="${photo.id}">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
                             <button class="btn btn-danger delete-btn" data-id="${photo.id}">
@@ -972,7 +1066,7 @@
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.target.closest('.edit-btn').getAttribute('data-id');
-                    editPhoto(id);
+                    openEditModalFromCard(id);
                 });
             });
             
@@ -980,6 +1074,14 @@
                 btn.addEventListener('click', (e) => {
                     const id = e.target.closest('.delete-btn').getAttribute('data-id');
                     deletePhoto(id);
+                });
+            });
+            
+            document.querySelectorAll('.edit-icon').forEach(icon => {
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = e.target.closest('.edit-icon').getAttribute('data-id');
+                    openEditModalFromCard(id);
                 });
             });
         }
@@ -1048,7 +1150,101 @@
             currentPhotoId = null;
         }
 
-        // Manipular envio do formulário
+        // Abrir modal de edição a partir do card
+        function openEditModalFromCard(id) {
+            if (!isLoggedIn) {
+                showNotification('Você precisa estar logado para editar fotos!', 'error');
+                return;
+            }
+            
+            const photo = allPhotos.find(p => p.id == id);
+            if (photo) {
+                currentEditingPhoto = photo;
+                document.getElementById('editTitle').value = photo.title;
+                document.getElementById('editDescription').value = photo.description;
+                document.getElementById('editDate').value = photo.date;
+                editModal.style.display = 'block';
+                viewModal.style.display = 'none';
+            }
+        }
+
+        // Abrir modal de edição a partir da visualização
+        function openEditModal() {
+            if (!isLoggedIn) {
+                showNotification('Você precisa estar logado para editar fotos!', 'error');
+                return;
+            }
+            
+            if (currentEditingPhoto) {
+                document.getElementById('editTitle').value = currentEditingPhoto.title;
+                document.getElementById('editDescription').value = currentEditingPhoto.description;
+                document.getElementById('editDate').value = currentEditingPhoto.date;
+                editModal.style.display = 'block';
+                viewModal.style.display = 'none';
+            }
+        }
+
+        // Fechar modal de edição
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            currentEditingPhoto = null;
+        }
+
+        // Manipular envio do formulário de edição
+        async function handleEditSubmit(e) {
+            e.preventDefault();
+            
+            if (!isLoggedIn) {
+                showNotification('Você precisa estar logado para editar fotos!', 'error');
+                return;
+            }
+            
+            const title = document.getElementById('editTitle').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+            const date = document.getElementById('editDate').value;
+            
+            // Validações
+            if (!title) {
+                showNotification('Por favor, insira um título para a foto!', 'error');
+                return;
+            }
+            
+            if (!date) {
+                showNotification('Por favor, selecione uma data!', 'error');
+                return;
+            }
+            
+            if (!currentEditingPhoto) {
+                showNotification('Nenhuma foto selecionada para edição!', 'error');
+                return;
+            }
+            
+            try {
+                const photoData = {
+                    title: title,
+                    description: description,
+                    date: date
+                };
+                
+                // Atualizar foto no banco de dados
+                const { error } = await supabase
+                    .from('photos')
+                    .update(photoData)
+                    .eq('id', currentEditingPhoto.id);
+                
+                if (error) throw error;
+                
+                showNotification('Foto atualizada com sucesso!', 'success');
+                closeEditModal();
+                loadPhotos();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar foto:', error);
+                showNotification('Erro ao atualizar foto. Tente novamente.', 'error');
+            }
+        }
+
+        // Manipular envio do formulário principal
         async function handleFormSubmit(e) {
             e.preventDefault();
             
@@ -1189,6 +1385,7 @@
             const photo = allPhotos.find(p => p.id == id);
             
             if (photo) {
+                currentEditingPhoto = photo;
                 document.getElementById('viewPhoto').src = photo.image_url;
                 document.getElementById('viewTitle').textContent = photo.title;
                 document.getElementById('viewDescription').textContent = photo.description;
@@ -1198,7 +1395,7 @@
             }
         }
 
-        // Editar foto
+        // Editar foto completa
         function editPhoto(id) {
             if (!isLoggedIn) {
                 showNotification('Você precisa estar logado para editar fotos!', 'error');
